@@ -7,13 +7,11 @@ const Text = () => {
 
   useFrame(() => {
     if (textRef.current) {
-      textRef.current.rotation.z += 0.01; //z軸で回転(時計回り)
+      textRef.current.rotation.y += 0.03; //z軸で回転(時計回り)
     }
   });
   return (
-    <Center>
-      {" "}
-      {/* ← 自動で中央揃え */}
+    <Center ref={textRef}>
       <Text3D
         font="/fonts/Dela Gothic One_Regular.json"
         size={1}
