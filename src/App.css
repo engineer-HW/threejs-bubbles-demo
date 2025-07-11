@@ -1,0 +1,9 @@
+/* 全体の余白とスクロールを完全に消す */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;     /* ← スクロールを禁止！ */
+  width: 100vw;
+  height: 100vh;
+  background: #00a497;    /* ← バックグラウンドも指定しておく */
+}
