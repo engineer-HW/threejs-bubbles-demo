@@ -1,7 +1,15 @@
-import React from "react";
+import React, { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Text3D, Center } from "@react-three/drei";
 
 const Text = () => {
+  const textRef = useRef();
+
+  useFrame(() => {
+    if (textRef.current) {
+      textRef.current.rotation.z += 0.01; //z軸で回転(時計回り)
+    }
+  });
   return (
     <Center>
       {" "}
