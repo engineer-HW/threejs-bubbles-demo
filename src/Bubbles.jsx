@@ -1,10 +1,10 @@
 import React, { useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-const MAX_BUBBLES = 50;
+const MAX_BUBBLES = 100;
 
-function Bubble({ bubble, onFadeOut }) {
+function Bubble({ bubble, onFadeOut, mousePosition }) {
   const ref = useRef();
   const [opacity, setOpacity] = useState(0.8);
   const [isPopping, setIsPopping] = useState(false);
@@ -20,6 +20,20 @@ function Bubble({ bubble, onFadeOut }) {
       }
     }
     if (!ref.current) return;
+
+    // マウスカーソルとの衝突判定
+    if (mousePosition) {
+      const bubblePosition = ref.current.position;
+      const bubbleSize = bubble.size;
+      
+      // マウス位置とバブルの距離を計算
+      const distance = bubblePosition.distanceTo(mousePosition);
+      const collisionDistance = bubbleSize + 0.5; // マウスカーソルの範囲を少し大きく
+      
+      if (distance < collisionDistance && !isPopping) {
+        setIsPopping(true);
+      }
+    }
 
     if (isPopping) {
       ref.current.scale.x += 0.1;
@@ -60,6 +74,8 @@ function Bubble({ bubble, onFadeOut }) {
 const Bubbles = () => {
   const [renderBubbles, setRenderBubbles] = useState([]); // 表示用
   const bubblesRef = useRef([]); // 実データ保持
+  const [mousePosition, setMousePosition] = useState(new THREE.Vector3());
+  const { camera, gl } = useThree();
 
   useFrame(() => {
     // 泡追加
@@ -81,6 +97,34 @@ const Bubbles = () => {
     }
   });
 
+  // マウス移動イベントハンドラー
+  const handleMouseMove = (event) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    // マウス位置を3D空間に変換
+    const mouse = new THREE.Vector3(x, y, 0.5);
+    mouse.unproject(camera);
+    
+    // カメラの位置からマウス方向にレイを飛ばして、Z=0の平面との交点を求める
+    const direction = mouse.sub(camera.position).normalize();
+    const distance = -camera.position.z / direction.z;
+    const worldPosition = camera.position.clone().add(direction.multiplyScalar(distance));
+    
+    setMousePosition(worldPosition);
+  };
+
+  // マウスイベントリスナーを設定
+  React.useEffect(() => {
+    const canvas = gl.domElement;
+    canvas.addEventListener('mousemove', handleMouseMove);
+    
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [gl, camera]);
+
   const handleFadeOut = (id) => {
     bubblesRef.current = bubblesRef.current.filter((b) => b.id !== id);
     setRenderBubbles([...bubblesRef.current]);
@@ -89,7 +133,7 @@ const Bubbles = () => {
   return (
     <>
       {renderBubbles.map((bubble) => (
-        <Bubble key={bubble.id} bubble={bubble} onFadeOut={handleFadeOut} />
+        <Bubble key={bubble.id} bubble={bubble} onFadeOut={handleFadeOut} mousePosition={mousePosition} />
       ))}
     </>
   );
